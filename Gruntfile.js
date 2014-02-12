@@ -2,20 +2,20 @@ module.exports = function (grunt) {
 
   grunt.initConfig({
     jshint: {
-      all: ['Gruntfile.js', 'webmaker-login.js', 'example/webmaker-auth-client.js'],
+      all: ['Gruntfile.js', 'index.js'],
       options: {
         jshintrc: '.jshintrc'
       }
     },
     jsbeautifier: {
       modify: {
-        src: ['Gruntfile.js', 'webmaker-login.js', 'example/webmaker-auth-client.js'],
+        src: ['Gruntfile.js', 'index.js'],
         options: {
           config: '.jsbeautifyrc'
         }
       },
       validate: {
-        src: ['Gruntfile.js', 'webmaker-login.js', 'example/webmaker-auth-client.js'],
+        src: ['Gruntfile.js', 'index.js'],
         options: {
           mode: 'VERIFY_ONLY',
           config: '.jsbeautifyrc'

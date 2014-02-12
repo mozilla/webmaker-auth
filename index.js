@@ -1,7 +1,7 @@
 var express = require('express');
 var hyperquest = require('hyperquest');
 
-module.exports = function(options) {
+module.exports = function (options) {
 
   options = options || {};
 
@@ -19,11 +19,11 @@ module.exports = function(options) {
     console.error('WARNING (webmaker-loginapi): loginURL was not passed into configuration. Defaulting to http://localhost:3000');
   }
 
-  self.cookieParser = function() {
+  self.cookieParser = function () {
     return express.cookieParser();
   };
 
-  self.cookieSession = function() {
+  self.cookieSession = function () {
     return express.cookieSession({
       key: self.cookieName,
       secret: self.secretKey,
@@ -35,23 +35,23 @@ module.exports = function(options) {
     });
   };
 
-  function authenticateCallback( err, req, res, json ) {
-    if ( err ) {
+  function authenticateCallback(err, req, res, json) {
+    if (err) {
       return res.json(500, {
         error: err
       });
     }
-    if ( !json ) {
+    if (!json) {
       return res.json(500, {
         error: 'The Login server sent an invalid response'
       });
     }
-    if ( json.error ) {
+    if (json.error) {
       return res.json(200, {
         error: json.error
       });
     }
-    if ( json.user ) {
+    if (json.user) {
       req.session.user = json.user;
       req.session.email = json.email;
       res.json(200, {
@@ -67,11 +67,11 @@ module.exports = function(options) {
   }
 
   self.handlers = {
-    authenticate: function(req, res, next) {
+    authenticate: function (req, res, next) {
 
       var hReq = hyperquest.post(self.loginURL + '/api/user/authenticate');
       hReq.on('error', next);
-      hReq.on('response', function(resp) {
+      hReq.on('response', function (resp) {
         if (resp.statusCode !== 200) {
           return res.json(500, {
             error: 'There was an error on the login server'
@@ -84,7 +84,7 @@ module.exports = function(options) {
           bodyParts.push(c);
           bytes += c.length;
         });
-        resp.on('end', function() {
+        resp.on('end', function () {
           var body = Buffer.concat(bodyParts, bytes).toString('utf8');
           var json;
 
@@ -103,7 +103,7 @@ module.exports = function(options) {
         audience: req.body.audience
       }), 'utf8');
     },
-    verify: function(req, res) {
+    verify: function (req, res) {
       if (!req.session.email && !req.session.user) {
         return res.send(200, {
           status: 'No Session'
@@ -115,10 +115,10 @@ module.exports = function(options) {
         email: req.session.email
       });
     },
-    create: function(req, res, next) {
+    create: function (req, res, next) {
       var hReq = hyperquest.post(self.loginURL + '/api/user/create');
       hReq.on('error', next);
-      hReq.on('response', function(resp) {
+      hReq.on('response', function (resp) {
         if (resp.statusCode !== 200) {
           return res.json(500, {
             error: 'There was an error on the login server'
@@ -131,7 +131,7 @@ module.exports = function(options) {
           bodyParts.push(c);
           bytes += c.length;
         });
-        resp.on('end', function() {
+        resp.on('end', function () {
           var body = Buffer.concat(bodyParts, bytes).toString('utf8');
           var json;
 
@@ -156,8 +156,8 @@ module.exports = function(options) {
         user: req.body.user
       }), 'utf8');
     },
-    logout: function(req, res) {
-      req.session = null;
+    logout: function (req, res) {
+      req.session.email = req.session.user = null;
       res.send();
     }
   };
