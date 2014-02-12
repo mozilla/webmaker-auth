@@ -145,6 +145,13 @@ module.exports = function (options) {
 
           req.session.user = json.user;
           req.session.email = json.email;
+
+          if (!json.user) {
+            return res.json(500, {
+              error: 'There was an error on ' + self.loginURL + '. No user account was created.'
+            });
+          }
+
           res.json(200, {
             user: json.user,
             email: json.email
@@ -153,7 +160,9 @@ module.exports = function (options) {
       });
       hReq.setHeader('Content-Type', 'application/json');
       hReq.end(JSON.stringify({
-        user: req.body.user
+        user: req.body.user,
+        assertion: req.body.assertion,
+        audience: req.body.audience
       }), 'utf8');
     },
     logout: function (req, res) {
