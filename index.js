@@ -115,6 +115,17 @@ module.exports = function (options) {
         audience: req.body.audience
       }), 'utf8');
     },
+    exists: function (req, res, next) {
+      var hReq = hyperquest.post({
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        uri: self.loginURL + '/api/user/exists'
+      });
+      hReq.on('error', next);
+      hReq.pipe(res);
+      hReq.end(JSON.stringify(req.body), 'utf8');
+    },
     verify: function (req, res) {
       if (!req.session.email && !req.session.user) {
         return res.send({
