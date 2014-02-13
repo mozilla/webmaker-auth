@@ -7,24 +7,29 @@ module.exports = function (options) {
 
   var self = this;
 
-  self.loginURL = options.loginURL || 'http://localhost:3000';
-
-  self.maxAge = options.maxAge || 2678400000; // 31 days. Persona saves session data for 1 month
-  self.forceSSL = options.forceSSL || false;
-  self.secretKey = options.secretKey || 'BOBSYOURUNCLE';
-  self.cookieName = options.cookieName || 'webmakerlogin.sid';
-
-  // No user-defined login URL
-  if (!options.loginURL) {
-    console.error('WARNING (webmaker-loginapi): loginURL was not passed into configuration. Defaulting to http://localhost:3000');
+  // missing session secret
+  if (!options.secretKey) {
+    throw new Error('(webmaker-auth): secretKey was not passed into configuration');
   }
+
+  // missing login URL
+  if (!options.loginURL) {
+    throw new Error('(webmaker-auth): loginURL was not passed into configuration.');
+  }
+
+  self.loginURL = options.loginURL;
+
+  self.maxAge = options.maxAge || 31536000000; // 365 days
+  self.forceSSL = options.forceSSL || false;
+  self.secretKey = options.secretKey;
+  self.cookieName = 'webmakerlogin';
 
   self.cookieParser = function () {
     return express.cookieParser();
   };
 
   self.cookieSession = function () {
-    return express.cookieSession({
+    var options = {
       key: self.cookieName,
       secret: self.secretKey,
       cookie: {
@@ -32,7 +37,11 @@ module.exports = function (options) {
         secure: self.forceSSL
       },
       proxy: true
-    });
+    };
+    if (self.domain) {
+      options.cookie.domain = self.domain;
+    }
+    return express.cookieSession(options);
   };
 
   function authenticateCallback(err, req, res, json) {
