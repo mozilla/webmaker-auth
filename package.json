@@ -13,6 +13,7 @@
   "author": "Webmaker Product Team <webmaker-staff@mozillafoundation.org>",
   "license": "MPLv2",
   "dependencies": {
+    "express": "3.4.5",
     "hyperquest": "~0.2.0"
   },
   "devDependencies": {
