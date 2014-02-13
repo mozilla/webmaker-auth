@@ -68,7 +68,6 @@ module.exports = function (options) {
 
   self.handlers = {
     authenticate: function (req, res, next) {
-
       var hReq = hyperquest.post({
         headers: {
           'Content-Type': 'application/json'
@@ -153,9 +152,8 @@ module.exports = function (options) {
           }
 
           if (!json.user) {
-            console.log( json.error );
             return res.json(500, {
-              error: "Error creating an account on " + self.loginURL + " - \"" + json.error + "\""
+              error: 'Error creating an account on ' + self.loginURL + ' - \"' + json.error + '\"'
             });
           }
 
