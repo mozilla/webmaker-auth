@@ -152,6 +152,12 @@ module.exports = function (options) {
             });
           }
 
+          if (!json.user) {
+            return res.json(500, {
+              error: "There was an error creating an account on " + self.loginURL
+            });
+          }
+
           req.session.user = json.user;
           req.session.email = json.email;
           res.json({
@@ -160,7 +166,10 @@ module.exports = function (options) {
           });
         });
       });
+
       hReq.end(JSON.stringify({
+        assertion: req.body.assertion,
+        audience: req.body.audience,
         user: req.body.user
       }), 'utf8');
     },
