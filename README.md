@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/cadecairos/webmaker-auth)](https://travis-ci.org/cadecairos/webmaker-auth)
+
 # Webmaker auth middleware
 
 ## Install
