@@ -8,7 +8,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/cadecairos/webmaker-auth.git"
+    "url": "git://github.com/mozilla/webmaker-auth.git"
   },
   "author": "Webmaker Product Team <webmaker-staff@mozillafoundation.org>",
   "license": "MPLv2",

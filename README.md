@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/cadecairos/webmaker-auth.png)](https://travis-ci.org/cadecairos/webmaker-auth)
+[![Build Status](https://travis-ci.org/mozilla/webmaker-auth.png)](https://travis-ci.org/mozilla/webmaker-auth)
 
 # Webmaker auth middleware
 
