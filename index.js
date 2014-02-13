@@ -47,19 +47,19 @@ module.exports = function (options) {
       });
     }
     if (json.error) {
-      return res.json(200, {
+      return res.json({
         error: json.error
       });
     }
     if (json.user) {
       req.session.user = json.user;
       req.session.email = json.email;
-      res.json(200, {
+      res.json({
         user: json.user,
         email: json.email
       });
     } else {
-      res.json(200, {
+      res.json({
         error: 'No user for email address',
         email: json.email
       });
@@ -69,16 +69,21 @@ module.exports = function (options) {
   self.handlers = {
     authenticate: function (req, res, next) {
 
-      var hReq = hyperquest.post(self.loginURL + '/api/user/authenticate');
+      var hReq = hyperquest.post({
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        uri: self.loginURL + '/api/user/authenticate'
+      });
       hReq.on('error', next);
       hReq.on('response', function (resp) {
         if (resp.statusCode !== 200) {
-          return res.json(500, {
+          return res.json(resp.statusCode || 500, {
             error: 'There was an error on the login server'
           });
         }
 
-        var bodyParts = []
+        var bodyParts = [];
         var bytes = 0;
         resp.on('data', function (c) {
           bodyParts.push(c);
@@ -97,7 +102,6 @@ module.exports = function (options) {
           authenticateCallback(null, req, res, json);
         });
       });
-      hReq.setHeader('Content-Type', 'application/json');
       hReq.end(JSON.stringify({
         assertion: req.body.assertion,
         audience: req.body.audience
@@ -105,27 +109,32 @@ module.exports = function (options) {
     },
     verify: function (req, res) {
       if (!req.session.email && !req.session.user) {
-        return res.send(200, {
+        return res.send({
           status: 'No Session'
         });
       }
-      res.send(200, {
+      res.send({
         status: 'Valid Session',
         user: req.session.user,
         email: req.session.email
       });
     },
     create: function (req, res, next) {
-      var hReq = hyperquest.post(self.loginURL + '/api/user/create');
+      var hReq = hyperquest.post({
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        uri: self.loginURL + '/api/user/create'
+      });
       hReq.on('error', next);
       hReq.on('response', function (resp) {
         if (resp.statusCode !== 200) {
-          return res.json(500, {
+          return res.json(resp.statusCode || 500, {
             error: 'There was an error on the login server'
           });
         }
 
-        var bodyParts = []
+        var bodyParts = [];
         var bytes = 0;
         resp.on('data', function (c) {
           bodyParts.push(c);
@@ -145,13 +154,12 @@ module.exports = function (options) {
 
           req.session.user = json.user;
           req.session.email = json.email;
-          res.json(200, {
+          res.json({
             user: json.user,
             email: json.email
           });
         });
       });
-      hReq.setHeader('Content-Type', 'application/json');
       hReq.end(JSON.stringify({
         user: req.body.user
       }), 'utf8');
