@@ -22,6 +22,7 @@ module.exports = function (options) {
   self.maxAge = options.maxAge || 31536000000; // 365 days
   self.forceSSL = options.forceSSL || false;
   self.secretKey = options.secretKey;
+  self.domain = options.domain;
   self.cookieName = 'webmakerlogin';
 
   self.cookieParser = function () {
