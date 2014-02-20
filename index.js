@@ -198,4 +198,12 @@ module.exports = function (options) {
       res.send();
     }
   };
+
+  self.bind = function (app) {
+    app.post('/verify', self.handlers.verify);
+    app.post('/authenticate', self.handlers.authenticate);
+    app.post('/create', self.handlers.create);
+    app.post('/logout', self.handlers.logout);
+    app.post('/check-username', self.handlers.exists);
+  };
 };
