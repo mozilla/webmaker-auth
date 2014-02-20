@@ -195,7 +195,9 @@ module.exports = function (options) {
     },
     logout: function (req, res) {
       req.session.email = req.session.user = null;
-      res.send();
+      res.json({
+        status: 'okay'
+      });
     }
   };
 
