@@ -39,10 +39,23 @@ module.exports = function (options) {
       },
       proxy: true
     };
+
     if (self.domain) {
       options.cookie.domain = self.domain;
     }
-    return express.cookieSession(options);
+
+    var cookieSessionMiddleware = express.cookieSession(options);
+
+    // This is a work-around for cross-origin OPTIONS requests
+    // See https://github.com/senchalabs/connect/issues/323
+    return function(req, res, next) {
+      if (req.method.toLowerCase() === 'options') {
+        return next();
+      } else {
+        cookieSessionMiddleware(req, res, next);
+      }
+    };
+
   };
 
   function authenticateCallback(err, req, res, json) {
