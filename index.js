@@ -48,7 +48,7 @@ module.exports = function (options) {
 
     // This is a work-around for cross-origin OPTIONS requests
     // See https://github.com/senchalabs/connect/issues/323
-    return function(req, res, next) {
+    return function (req, res, next) {
       if (req.method.toLowerCase() === 'options') {
         return next();
       } else {
