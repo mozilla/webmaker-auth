@@ -77,10 +77,7 @@ module.exports = function (options) {
     if (json.user) {
       req.session.user = json.user;
       req.session.email = json.email;
-      res.json({
-        user: json.user,
-        email: json.email
-      });
+      res.json(json);
     } else {
       res.json({
         error: 'No user for email address',
@@ -193,10 +190,7 @@ module.exports = function (options) {
 
           req.session.user = json.user;
           req.session.email = json.email;
-          res.json({
-            user: json.user,
-            email: json.email
-          });
+          res.json(json);
         });
       });
 
