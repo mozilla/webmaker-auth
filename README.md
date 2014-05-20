@@ -24,6 +24,8 @@ Alternatively, you can just set `ALLOWED_DOMAINS="*"` to make your life easier.
 ```
 var WebmakerAuth = require('webmaker-auth');
 
+
+// Init
 var webmakerAuth = new WebmakerAuth({
   // required
   loginURL: process.env.LOGIN_URL,
@@ -35,6 +37,15 @@ var webmakerAuth = new WebmakerAuth({
   maxAge: process.env.MAX_AGE // default 365 days
 });
 
+// Middleware
+app.use(express.json());
+app.use(express.urlencoded());
+
+app.use(webmakerAuth.cookieParser());
+app.use(webmakerAuth.cookieSession());
+
+
+// Routes for front end
 app.post('/verify', webmakerAuth.handlers.verify);
 app.post('/authenticate', webmakerAuth.handlers.authenticate);
 app.post('/create', webmakerAuth.handlers.create);
