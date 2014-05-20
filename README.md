@@ -21,9 +21,11 @@ Alternatively, you can just set `ALLOWED_DOMAINS="*"` to make your life easier.
 
 ## usage
 
-```
+```javascript
 var WebmakerAuth = require('webmaker-auth');
 
+// For Express 4 only
+// var bodyParser = require('body-parser'); 
 
 // Init
 var webmakerAuth = new WebmakerAuth({
@@ -41,9 +43,12 @@ var webmakerAuth = new WebmakerAuth({
 app.use(express.json());
 app.use(express.urlencoded());
 
+// For Express 4 use these includes instead of the previous 2
+// app.use(bodyParser.json());
+// app.use(bodyParser.urlencoded());
+
 app.use(webmakerAuth.cookieParser());
 app.use(webmakerAuth.cookieSession());
-
 
 // Routes for front end
 app.post('/verify', webmakerAuth.handlers.verify);
@@ -51,8 +56,6 @@ app.post('/authenticate', webmakerAuth.handlers.authenticate);
 app.post('/create', webmakerAuth.handlers.create);
 app.post('/logout', webmakerAuth.handlers.logout);
 app.post('/check-username', webmakerAuth.handlers.exists);
-
-
 ```
 
 ### TODO:
