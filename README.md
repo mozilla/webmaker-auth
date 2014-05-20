@@ -2,6 +2,18 @@
 
 # Webmaker auth middleware
 
+## Configure Webmaker login
+
+You must configure your instance of the [Webmaker login server](https://github.com/mozilla/login.webmaker.org) to allow the domain on which your app is running.
+
+For example, if your app is running on `http://localhost:7777`, you should add the following to the Webmaker login server's .env:
+
+```
+ALLOWED_DOMAINS="http://localhost:7777"
+```
+
+Alternatively, you can just set `ALLOWED_DOMAINS="*"` to make your life easier.
+
 ## Install
 
 `npm install webmaker-auth`
@@ -27,10 +39,8 @@ app.post('/verify', webmakerAuth.handlers.verify);
 app.post('/authenticate', webmakerAuth.handlers.authenticate);
 app.post('/create', webmakerAuth.handlers.create);
 app.post('/logout', webmakerAuth.handlers.logout);
-app.post('/check-username', self.handlers.exists);
+app.post('/check-username', webmakerAuth.handlers.exists);
 
-// Shorthand to above
-webmakerAuth.bind(app);
 
 ```
 
