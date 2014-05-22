@@ -36,7 +36,7 @@ var webmakerAuth = new WebmakerAuth({
   // optional
   domain: process.env.COOKIE_DOMAIN, // default undefined
   forceSSL: process.env.FORCE_SSL, // default false
-  maxAge: process.env.MAX_AGE // default 365 days
+  maxAge: process.env.MAX_AGE // default 365 days (value defined in seconds)
 });
 
 // Middleware
