@@ -187,7 +187,7 @@ module.exports = function (options) {
 
           if (!json.user) {
             return res.json(500, {
-              error: 'Error creating an account on ' + self.loginURL + ' - \"' + json.error + '\"'
+              error: 'Error creating an account - \"' + json.error + '\"'
             });
           }
 
