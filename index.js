@@ -7,23 +7,29 @@ module.exports = function (options) {
 
   var self = this;
 
+  var ONE_YEAR = 31536000000;
+
   // missing session secret
   if (!options.secretKey) {
-    throw new Error('(webmaker-auth): secretKey was not passed into configuration');
+    throw new Error('(webmaker-auth): secretKey was not passed into webmaker-auth');
   }
 
   // missing login URL
   if (!options.loginURL) {
-    throw new Error('(webmaker-auth): loginURL was not passed into configuration.');
+    throw new Error('(webmaker-auth): loginURL was not passed into webmaker-auth');
+  }
+
+  // missing Login Host URL
+  if (!options.loginHost) {
+    throw new Error('(webmaker-auth): loginHost was not passed into webmaker-auth');
   }
 
   self.loginURL = options.loginURL;
-
   self.authLoginURL = options.authLoginURL;
+  self.loginHost = options.loginHost;
 
   self.refreshTime = options.refreshTime || 1000 * 60 * 15; // 15 minutes
 
-  self.maxAge = 31536000000; // 365 days
   self.forceSSL = options.forceSSL || false;
   self.secretKey = options.secretKey;
   self.domain = options.domain;
@@ -38,7 +44,7 @@ module.exports = function (options) {
       key: self.cookieName,
       secret: self.secretKey,
       cookie: {
-        maxAge: self.maxAge,
+        expires: false,
         secure: self.forceSSL
       },
       proxy: true
@@ -79,6 +85,10 @@ module.exports = function (options) {
       });
     }
     if (json.user) {
+      if (req.body.validFor === 'one-year') {
+        req.session.cookie.maxAge = ONE_YEAR;
+      }
+
       req.session.user = json.user;
       req.session.email = json.email;
       req.session.refreshAfter = Date.now() + self.refreshTime;
@@ -118,7 +128,7 @@ module.exports = function (options) {
         try {
           json = JSON.parse(body);
         } catch (ex) {
-          return authenticateCallback(ex);
+          return authenticateCallback(ex, req, res);
         }
         json.email = json.user.email;
         authenticateCallback(null, req, res, json);
@@ -126,7 +136,113 @@ module.exports = function (options) {
     });
   }
 
+  function getIPAddress(req) {
+    // account for load balancer!
+    if (options.forceSSL) {
+      return req.headers['x-forwarded-for'];
+    }
+
+    return req.connection.remoteAddress;
+  }
+
   self.handlers = {
+    request: function (req, res, next) {
+      if (!req.body.uid) {
+        return res.json(400, {
+          error: 'missing email or username'
+        });
+      }
+      var hReq = hyperquest.post({
+        headers: {
+          'Content-Type': 'application/json',
+          'x-forwarded-for': getIPAddress(req)
+        },
+        uri: self.authLoginURL + '/api/v2/user/request'
+      });
+      hReq.on('error', next);
+      hReq.on('response', function (resp) {
+
+        if (resp.statusCode === 429) {
+          res.set({
+            'x-ratelimit-limit': resp.headers['x-ratelimit-limit'],
+            'x-ratelimit-remaining': resp.headers['x-ratelimit-remaining'],
+            'retry-after': resp.headers['retry-after']
+          });
+          return res.json(resp.statusCode, {
+            error: 'Request Limit Exceeded'
+          });
+        }
+
+        var bodyParts = [];
+        var bytes = 0;
+        resp.on('data', function (c) {
+          bodyParts.push(c);
+          bytes += c.length;
+        });
+        resp.on('end', function () {
+          var body = Buffer.concat(bodyParts, bytes).toString('utf8');
+          var json;
+
+          try {
+            json = JSON.parse(body);
+          } catch (ex) {
+            return authenticateCallback(ex, req, res);
+          }
+
+          res.json(json);
+        });
+      });
+      hReq.end(JSON.stringify({
+        uid: req.body.uid,
+        appURL: self.loginHost
+      }), 'utf8');
+    },
+    authenticateToken: function (req, res, next) {
+      if (!req.body.uid || !req.body.token) {
+        return res.json(400, {
+          error: 'uid and token are required'
+        });
+      }
+      var hReq = hyperquest.post({
+        headers: {
+          'Content-Type': 'application/json',
+          'x-forwarded-for': getIPAddress(req)
+        },
+        uri: self.authLoginURL + '/api/v2/user/authenticateToken'
+      });
+      hReq.on('error', next);
+      hReq.on('response', function (resp) {
+        if (resp.statusCode !== 200) {
+          return res.json(resp.statusCode || 500, {
+            error: resp.statusCode === 401 ? 'unauthorized' : 'There was an error on the login server'
+          });
+        }
+
+        var bodyParts = [];
+        var bytes = 0;
+        resp.on('data', function (c) {
+          bodyParts.push(c);
+          bytes += c.length;
+        });
+        resp.on('end', function () {
+          var body = Buffer.concat(bodyParts, bytes).toString('utf8');
+          var json;
+
+          try {
+            json = JSON.parse(body);
+          } catch (ex) {
+            return authenticateCallback(ex, req, res);
+          }
+
+          authenticateCallback(null, req, res, json);
+        });
+      });
+      hReq.end(JSON.stringify({
+        uid: req.body.uid,
+        token: req.body.token,
+        user: req.body.user
+      }), 'utf8');
+    },
     authenticate: function (req, res, next) {
       var hReq = hyperquest.post({
         headers: {
@@ -155,7 +271,7 @@ module.exports = function (options) {
           try {
             json = JSON.parse(body);
           } catch (ex) {
-            return authenticateCallback(ex);
+            return authenticateCallback(ex, req, res);
           }
 
           authenticateCallback(null, req, res, json);
@@ -180,6 +296,60 @@ module.exports = function (options) {
       hReq.pipe(res);
       hReq.end(JSON.stringify(req.body), 'utf8');
     },
+    uidExists: function (req, res, next) {
+      if (!req.body.uid) {
+        return res.json(400, {
+          error: 'Missing uid param'
+        });
+      }
+      var hReq = hyperquest.post({
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        uri: self.authLoginURL + '/api/v2/user/exists'
+      });
+      hReq.on('error', next);
+      hReq.on('response', function (resp) {
+        if (resp.statusCode !== 200) {
+          if (resp.statusCode === 404) {
+            return res.json({
+              exists: false
+            });
+          }
+          return res.json(resp.statusCode || 500, {
+            error: 'There was an error on the login server'
+          });
+        }
+        var bodyParts = [];
+        var bytes = 0;
+        resp.on('data', function (c) {
+          bodyParts.push(c);
+          bytes += c.length;
+        });
+        resp.on('end', function () {
+          var body = Buffer.concat(bodyParts, bytes).toString('utf8');
+          var json;
+
+          try {
+            json = JSON.parse(body);
+          } catch (ex) {
+            return res.json(500, {
+              error: 'invalid response from login server'
+            });
+          }
+
+          res.json({
+            exists: json.exists,
+            usePasswordLogin: json.usePasswordLogin,
+            verified: json.verified
+          });
+        });
+      });
+      hReq.end(JSON.stringify({
+        uid: req.body.uid
+      }), 'utf8');
+
+    },
     verify: function (req, res, next) {
       if (!req.session.email && !req.session.user) {
         return res.send({
@@ -196,6 +366,59 @@ module.exports = function (options) {
         user: req.session.user,
         email: req.session.email
       });
+    },
+    createUser: function (req, res, next) {
+      var hReq = hyperquest.post({
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        uri: self.loginURL + '/api/v2/user/create'
+      });
+      hReq.on('error', next);
+      hReq.on('response', function (resp) {
+        if (resp.statusCode !== 200) {
+          return res.json(resp.statusCode || 500, {
+            error: 'There was an error on the login server'
+          });
+        }
+
+        var bodyParts = [];
+        var bytes = 0;
+        resp.on('data', function (c) {
+          bodyParts.push(c);
+          bytes += c.length;
+        });
+        resp.on('end', function () {
+          var body = Buffer.concat(bodyParts, bytes).toString('utf8');
+          var json;
+
+          try {
+            json = JSON.parse(body);
+          } catch (ex) {
+            return res.json(500, {
+              error: 'There was an error parsing the response from the Login Server'
+            });
+          }
+
+          if (!json.user) {
+            return res.json(500, {
+              error: 'Error creating an account - \"' + json.error + '\"'
+            });
+          }
+
+          req.session.user = json.user;
+          req.session.email = json.email;
+          res.json({
+            user: json.user,
+            email: json.email
+          });
+        });
+      });
+
+      hReq.end(JSON.stringify({
+        audience: req.body.audience,
+        user: req.body.user
+      }), 'utf8');
     },
     create: function (req, res, next) {
       var hReq = hyperquest.post({
@@ -256,6 +479,258 @@ module.exports = function (options) {
       res.json({
         status: 'okay'
       });
+    },
+    verifyPassword: function (req, res, next) {
+      if (!req.body.uid || !req.body.password) {
+        return res.json(400, {
+          error: 'Missing email or password param'
+        });
+      }
+      var hReq = hyperquest.post({
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        uri: self.authLoginURL + '/api/v2/user/verify-password'
+      });
+      hReq.on('error', next);
+      hReq.on('response', function (resp) {
+        if (resp.statusCode !== 200) {
+          return res.json(401, {
+            status: 'unauthorized'
+          });
+        }
+
+        var bodyParts = [];
+        var bytes = 0;
+        resp.on('data', function (c) {
+          bodyParts.push(c);
+          bytes += c.length;
+        });
+        resp.on('end', function () {
+          var body = Buffer.concat(bodyParts, bytes).toString('utf8');
+          var json;
+
+          try {
+            json = JSON.parse(body);
+          } catch (ex) {
+            return authenticateCallback(ex, req, res);
+          }
+
+          authenticateCallback(null, req, res, json);
+        });
+      });
+
+      hReq.end(JSON.stringify({
+        password: req.body.password,
+        uid: req.body.uid,
+        user: req.body.user
+      }), 'utf8');
+    },
+    requestResetCode: function (req, res, next) {
+      if (!req.body.uid) {
+        return res.json(400, {
+          error: 'Missing email or username'
+        });
+      }
+      var hReq = hyperquest.post({
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        uri: self.authLoginURL + '/api/v2/user/request-reset-code'
+      });
+      hReq.on('error', next);
+      hReq.on('response', function (resp) {
+        if (resp.statusCode !== 200) {
+          return res.json(resp.statusCode || 500, {
+            error: 'There was an error on the login server'
+          });
+        }
+
+        var bodyParts = [];
+        var bytes = 0;
+        resp.on('data', function (c) {
+          bodyParts.push(c);
+          bytes += c.length;
+        });
+        resp.on('end', function () {
+          var body = Buffer.concat(bodyParts, bytes).toString('utf8');
+          var json;
+
+          try {
+            json = JSON.parse(body);
+          } catch (ex) {
+            return res.json(500, {
+              error: 'There was an error parsing the response from the server'
+            });
+          }
+
+          res.json(json);
+        });
+      });
+      hReq.end(JSON.stringify({
+        uid: req.body.uid
+      }), 'utf8');
+    },
+    resetPassword: function (req, res, next) {
+      var body = req.body;
+      if (!body.uid || !body.resetCode || !body.newPassword) {
+        return res.json(400, {
+          error: 'Missing required parameters'
+        });
+      }
+      var hReq = hyperquest.post({
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        uri: self.authLoginURL + '/api/v2/user/reset-password'
+      });
+      hReq.on('error', next);
+      hReq.on('response', function (resp) {
+        if (resp.statusCode !== 200 &&
+          resp.statusCode !== 400 &&
+          resp.statusCode !== 401) {
+          return res.json(500, {
+            error: 'There was an error on the login server'
+          });
+        }
+
+        var bodyParts = [];
+        var bytes = 0;
+        resp.on('data', function (c) {
+          bodyParts.push(c);
+          bytes += c.length;
+        });
+        resp.on('end', function () {
+          var body = Buffer.concat(bodyParts, bytes).toString('utf8');
+          var json;
+
+          try {
+            json = JSON.parse(body);
+          } catch (ex) {
+            return res.json(500, {
+              error: 'There was an error parsing the response from the server'
+            });
+          }
+
+          res.json(resp.statusCode, json);
+        });
+      });
+      hReq.end(JSON.stringify({
+        uid: body.uid,
+        resetCode: body.resetCode,
+        newPassword: body.newPassword
+      }), 'utf8');
+    },
+    removePassword: function (req, res, next) {
+      if (!req.session.user) {
+        return res.json(401, {
+          status: 'unauthorized'
+        });
+      }
+
+      var hReq = hyperquest.post({
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        uri: self.authLoginURL + '/api/v2/user/remove-password'
+      });
+      hReq.on('error', next);
+      hReq.on('response', function (resp) {
+        if (resp.statusCode !== 200) {
+          return res.json(500, {
+            error: 'There was an error on the login server'
+          });
+        }
+
+        var bodyParts = [];
+        var bytes = 0;
+        resp.on('data', function (c) {
+          bodyParts.push(c);
+          bytes += c.length;
+        });
+        resp.on('end', function () {
+          var body = Buffer.concat(bodyParts, bytes).toString('utf8');
+          var json;
+
+          try {
+            json = JSON.parse(body);
+          } catch (ex) {
+            return res.json(500, {
+              error: 'There was an error parsing the response from the server'
+            });
+          }
+
+          authenticateCallback(null, req, res, json);
+        });
+      });
+      hReq.end(JSON.stringify({
+        uid: req.session.user.email
+      }), 'utf8');
+    },
+    enablePasswords: function (req, res, next) {
+      var body = req.body;
+
+      if (!req.session.user) {
+        return res.json(401, {
+          status: 'unauthorized'
+        });
+      }
+
+      if (!body.password) {
+        return res.json(400, {
+          error: 'check parameters'
+        });
+      }
+      var hReq = hyperquest.post({
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        uri: self.authLoginURL + '/api/v2/user/enable-passwords'
+      });
+      hReq.on('error', next);
+      hReq.on('response', function (resp) {
+        if (resp.statusCode !== 200) {
+          switch (res.statusCode) {
+          case 400:
+            return res.json(400, {
+              error: 'bad request'
+            });
+          case 401:
+            return res.json(401, {
+              error: 'unauthorized'
+            });
+          default:
+            return res.json(resp.statusCode, {
+              error: 'There was an error processing the request'
+            });
+          }
+        }
+
+        var bodyParts = [];
+        var bytes = 0;
+        resp.on('data', function (c) {
+          bodyParts.push(c);
+          bytes += c.length;
+        });
+        resp.on('end', function () {
+          var body = Buffer.concat(bodyParts, bytes).toString('utf8');
+          var json;
+
+          try {
+            json = JSON.parse(body);
+          } catch (ex) {
+            return res.json(500, {
+              error: 'There was an error parsing the response from the server'
+            });
+          }
+
+          authenticateCallback(null, req, res, json);
+        });
+      });
+      hReq.end(JSON.stringify({
+        uid: req.session.user.email,
+        password: body.password
+      }), 'utf8');
     }
   };
 
@@ -265,5 +740,14 @@ module.exports = function (options) {
     app.post('/create', self.handlers.create);
     app.post('/logout', self.handlers.logout);
     app.post('/check-username', self.handlers.exists);
+    app.post('/auth/v2/authenticateToken', self.handlers.authenticateToken);
+    app.post('/auth/v2/request', self.handlers.request);
+    app.post('/auth/v2/uid-exists', self.handlers.uidExists);
+    app.post('/auth/v2/create', self.handlers.createUser);
+    app.post('/auth/v2/verify-password', self.handlers.verifyPassword);
+    app.post('/auth/v2/request-reset-code', self.handlers.requestResetCode);
+    app.post('/auth/v2/reset-password', self.handlers.resetPassword);
+    app.post('/auth/v2/remove-password', self.handlers.removePassword);
+    app.post('/auth/v2/enable-passwords', self.handlers.enablePasswords);
   };
 };

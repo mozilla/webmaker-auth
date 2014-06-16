@@ -31,14 +31,15 @@ var WebmakerAuth = require('webmaker-auth');
 var webmakerAuth = new WebmakerAuth({
   // required
   loginURL: process.env.LOGIN_URL,
+  authLoginURL: process.env.LOGIN_URL_WITH_AUTH,
   secretKey: process.env.SECRET_KEY,
+
+  // The address to use when requesting a login link for a user - usually the hostname of the app.
+  loginHost: process.env.LOGIN_HOST_ADDRESS
 
   // optional
   domain: process.env.COOKIE_DOMAIN, // default undefined
   forceSSL: process.env.FORCE_SSL // default false
-
-  // provide this if you want to enable automatic user data refreshing
-  authLoginURL: process.env.LOGIN_URL_WITH_AUTH
 
   // if a cookie is older than the given time (in milliseconds), refresh the userdata
   refreshTime: 1000 * 60 * 5 // default 15 minutes
