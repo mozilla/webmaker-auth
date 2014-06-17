@@ -19,6 +19,10 @@ module.exports = function (options) {
 
   self.loginURL = options.loginURL;
 
+  self.authLoginURL = options.authLoginURL;
+
+  self.refreshTime = options.refreshTime || 1000 * 60 * 15; // 15 minutes
+
   self.maxAge = 31536000000; // 365 days
   self.forceSSL = options.forceSSL || false;
   self.secretKey = options.secretKey;
@@ -77,6 +81,7 @@ module.exports = function (options) {
     if (json.user) {
       req.session.user = json.user;
       req.session.email = json.email;
+      req.session.refreshAfter = Date.now() + self.refreshTime;
       res.json({
         user: json.user,
         email: json.email
@@ -87,6 +92,38 @@ module.exports = function (options) {
         email: json.email
       });
     }
+  }
+
+  function refreshSession(req, res, next) {
+    var hReq = hyperquest.get({
+      uri: self.authLoginURL + '/user/email/' + req.session.email
+    });
+    hReq.on('error', next);
+    hReq.on('response', function (resp) {
+      if (resp.statusCode !== 200) {
+        return res.json(resp.statusCode || 500, {
+          error: 'There was an error on the login server'
+        });
+      }
+      var bodyParts = [];
+      var bytes = 0;
+      resp.on('data', function (c) {
+        bodyParts.push(c);
+        bytes += c.length;
+      });
+      resp.on('end', function () {
+        var body = Buffer.concat(bodyParts, bytes).toString('utf8');
+        var json;
+
+        try {
+          json = JSON.parse(body);
+        } catch (ex) {
+          return authenticateCallback(ex);
+        }
+        json.email = json.user.email;
+        authenticateCallback(null, req, res, json);
+      });
+    });
   }
 
   self.handlers = {
@@ -142,12 +179,17 @@ module.exports = function (options) {
       hReq.pipe(res);
       hReq.end(JSON.stringify(req.body), 'utf8');
     },
-    verify: function (req, res) {
+    verify: function (req, res, next) {
       if (!req.session.email && !req.session.user) {
         return res.send({
           status: 'No Session'
         });
       }
+
+      if (self.authLoginURL && !req.session.refreshAfter || req.session.refreshAfter < Date.now()) {
+        return refreshSession(req, res, next);
+      }
+
       res.send({
         status: 'Valid Session',
         user: req.session.user,
