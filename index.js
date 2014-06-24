@@ -136,6 +136,8 @@ module.exports = function (options) {
         },
         uri: self.loginURL + '/api/user/exists'
       });
+      res.set('Content-Type', 'application/json');
+
       hReq.on('error', next);
       hReq.pipe(res);
       hReq.end(JSON.stringify(req.body), 'utf8');
