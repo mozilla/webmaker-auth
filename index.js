@@ -96,7 +96,7 @@ module.exports = function (options) {
 
   function refreshSession(req, res, next) {
     var hReq = hyperquest.get({
-      uri: self.authLoginURL + '/user/email/' + req.session.email
+      uri: self.authLoginURL + '/user/id/' + req.session.user.id
     });
     hReq.on('error', next);
     hReq.on('response', function (resp) {
@@ -251,7 +251,7 @@ module.exports = function (options) {
       }), 'utf8');
     },
     logout: function (req, res) {
-      req.session.email = req.session.user = null;
+      req.session.email = req.session.user = req.session.refreshAfter = null;
       res.json({
         status: 'okay'
       });
