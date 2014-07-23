@@ -163,7 +163,8 @@ module.exports = function (options) {
       });
       hReq.end(JSON.stringify({
         assertion: req.body.assertion,
-        audience: req.body.audience
+        audience: req.body.audience,
+        user: req.body.user
       }), 'utf8');
     },
     exists: function (req, res, next) {
