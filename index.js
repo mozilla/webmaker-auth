@@ -152,6 +152,11 @@ module.exports = function (options) {
           error: 'missing email or username'
         });
       }
+
+      if ( !req.body.path ) {
+        req.body.path = '';
+      }
+
       var hReq = hyperquest.post({
         headers: {
           'Content-Type': 'application/json',
@@ -194,7 +199,7 @@ module.exports = function (options) {
       });
       hReq.end(JSON.stringify({
         uid: req.body.uid,
-        appURL: self.loginHost
+        appURL: self.loginHost + req.body.path
       }), 'utf8');
     },
     authenticateToken: function (req, res, next) {
