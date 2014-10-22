@@ -153,7 +153,7 @@ module.exports = function (options) {
         });
       }
 
-      if ( !req.body.path ) {
+      if (!req.body.path) {
         req.body.path = '';
       }
 
