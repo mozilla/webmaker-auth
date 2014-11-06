@@ -160,7 +160,7 @@ module.exports = function (options) {
       var hReq = hyperquest.post({
         headers: {
           'Content-Type': 'application/json',
-          'x-forwarded-for': getIPAddress(req)
+          'x-ratelimit-ip': getIPAddress(req)
         },
         uri: self.authLoginURL + '/api/v2/user/request'
       });
@@ -211,7 +211,7 @@ module.exports = function (options) {
       var hReq = hyperquest.post({
         headers: {
           'Content-Type': 'application/json',
-          'x-forwarded-for': getIPAddress(req)
+          'x-ratelimit-ip': getIPAddress(req)
         },
         uri: self.authLoginURL + '/api/v2/user/authenticateToken'
       });
@@ -288,19 +288,6 @@ module.exports = function (options) {
         user: req.body.user
       }), 'utf8');
     },
-    exists: function (req, res, next) {
-      var hReq = hyperquest.post({
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        uri: self.loginURL + '/api/user/exists'
-      });
-      res.set('Content-Type', 'application/json');
-
-      hReq.on('error', next);
-      hReq.pipe(res);
-      hReq.end(JSON.stringify(req.body), 'utf8');
-    },
     uidExists: function (req, res, next) {
       if (!req.body.uid) {
         return res.json(400, {
@@ -375,7 +362,8 @@ module.exports = function (options) {
     createUser: function (req, res, next) {
       var hReq = hyperquest.post({
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'x-ratelimit-ip': getIPAddress(req)
         },
         uri: self.loginURL + '/api/v2/user/create'
       });
@@ -425,60 +413,6 @@ module.exports = function (options) {
         user: req.body.user
       }), 'utf8');
     },
-    create: function (req, res, next) {
-      var hReq = hyperquest.post({
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        uri: self.loginURL + '/api/user/create'
-      });
-      hReq.on('error', next);
-      hReq.on('response', function (resp) {
-        if (resp.statusCode !== 200) {
-          return res.json(resp.statusCode || 500, {
-            error: 'There was an error on the login server'
-          });
-        }
-
-        var bodyParts = [];
-        var bytes = 0;
-        resp.on('data', function (c) {
-          bodyParts.push(c);
-          bytes += c.length;
-        });
-        resp.on('end', function () {
-          var body = Buffer.concat(bodyParts, bytes).toString('utf8');
-          var json;
-
-          try {
-            json = JSON.parse(body);
-          } catch (ex) {
-            return res.json(500, {
-              error: 'There was an error parsing the response from the Login Server'
-            });
-          }
-
-          if (!json.user) {
-            return res.json(500, {
-              error: 'Error creating an account - \"' + json.error + '\"'
-            });
-          }
-
-          req.session.user = json.user;
-          req.session.email = json.email;
-          res.json({
-            user: json.user,
-            email: json.email
-          });
-        });
-      });
-
-      hReq.end(JSON.stringify({
-        assertion: req.body.assertion,
-        audience: req.body.audience,
-        user: req.body.user
-      }), 'utf8');
-    },
     logout: function (req, res) {
       req.session.email = req.session.user = req.session.refreshAfter = null;
       res.json({
@@ -493,7 +427,8 @@ module.exports = function (options) {
       }
       var hReq = hyperquest.post({
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'x-ratelimit-ip': getIPAddress(req)
         },
         uri: self.authLoginURL + '/api/v2/user/verify-password'
       });
@@ -539,7 +474,8 @@ module.exports = function (options) {
       }
       var hReq = hyperquest.post({
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'x-ratelimit-ip': getIPAddress(req)
         },
         uri: self.authLoginURL + '/api/v2/user/request-reset-code'
       });
@@ -585,7 +521,8 @@ module.exports = function (options) {
       }
       var hReq = hyperquest.post({
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'x-ratelimit-ip': getIPAddress(req)
         },
         uri: self.authLoginURL + '/api/v2/user/reset-password'
       });
@@ -742,9 +679,7 @@ module.exports = function (options) {
   self.bind = function (app) {
     app.post('/verify', self.handlers.verify);
     app.post('/authenticate', self.handlers.authenticate);
-    app.post('/create', self.handlers.create);
     app.post('/logout', self.handlers.logout);
-    app.post('/check-username', self.handlers.exists);
     app.post('/auth/v2/authenticateToken', self.handlers.authenticateToken);
     app.post('/auth/v2/request', self.handlers.request);
     app.post('/auth/v2/uid-exists', self.handlers.uidExists);
