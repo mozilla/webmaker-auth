@@ -218,6 +218,16 @@ module.exports = function (options) {
       hReq.on('error', next);
       hReq.on('response', function (resp) {
         if (resp.statusCode !== 200) {
+          if (resp.statusCode === 429) {
+            res.set({
+              'x-ratelimit-limit': resp.headers['x-ratelimit-limit'],
+              'x-ratelimit-remaining': resp.headers['x-ratelimit-remaining'],
+              'retry-after': resp.headers['retry-after']
+            });
+            return res.json(resp.statusCode, {
+              error: 'Request Limit Exceeded'
+            });
+          }
           return res.json(resp.statusCode || 500, {
             error: resp.statusCode === 401 ? 'unauthorized' : 'There was an error on the login server'
           });
@@ -370,6 +380,16 @@ module.exports = function (options) {
       hReq.on('error', next);
       hReq.on('response', function (resp) {
         if (resp.statusCode !== 200) {
+          if (resp.statusCode === 429) {
+            res.set({
+              'x-ratelimit-limit': resp.headers['x-ratelimit-limit'],
+              'x-ratelimit-remaining': resp.headers['x-ratelimit-remaining'],
+              'retry-after': resp.headers['retry-after']
+            });
+            return res.json(resp.statusCode, {
+              error: 'Request Limit Exceeded'
+            });
+          }
           return res.json(resp.statusCode || 500, {
             error: 'There was an error on the login server'
           });
@@ -435,6 +455,16 @@ module.exports = function (options) {
       hReq.on('error', next);
       hReq.on('response', function (resp) {
         if (resp.statusCode !== 200) {
+          if (resp.statusCode === 429) {
+            res.set({
+              'x-ratelimit-limit': resp.headers['x-ratelimit-limit'],
+              'x-ratelimit-remaining': resp.headers['x-ratelimit-remaining'],
+              'retry-after': resp.headers['retry-after']
+            });
+            return res.json(resp.statusCode, {
+              error: 'Request Limit Exceeded'
+            });
+          }
           return res.json(401, {
             status: 'unauthorized'
           });
@@ -482,6 +512,16 @@ module.exports = function (options) {
       hReq.on('error', next);
       hReq.on('response', function (resp) {
         if (resp.statusCode !== 200) {
+          if (resp.statusCode === 429) {
+            res.set({
+              'x-ratelimit-limit': resp.headers['x-ratelimit-limit'],
+              'x-ratelimit-remaining': resp.headers['x-ratelimit-remaining'],
+              'retry-after': resp.headers['retry-after']
+            });
+            return res.json(resp.statusCode, {
+              error: 'Request Limit Exceeded'
+            });
+          }
           return res.json(resp.statusCode || 500, {
             error: 'There was an error on the login server'
           });
@@ -531,6 +571,16 @@ module.exports = function (options) {
         if (resp.statusCode !== 200 &&
           resp.statusCode !== 400 &&
           resp.statusCode !== 401) {
+          if (resp.statusCode === 429) {
+            res.set({
+              'x-ratelimit-limit': resp.headers['x-ratelimit-limit'],
+              'x-ratelimit-remaining': resp.headers['x-ratelimit-remaining'],
+              'retry-after': resp.headers['retry-after']
+            });
+            return res.json(resp.statusCode, {
+              error: 'Request Limit Exceeded'
+            });
+          }
           return res.json(500, {
             error: 'There was an error on the login server'
           });
