@@ -34,6 +34,10 @@ var webmakerAuth = new WebmakerAuth({
   authLoginURL: process.env.LOGIN_URL_WITH_AUTH,
   secretKey: process.env.SECRET_KEY,
 
+  // This should be an array of URLs, or undefined.
+  // If you pass in ["*"], all CORS domains will be allowed (don't do this on production)
+  allowCors: ["*"],
+
   // The address to use when requesting a login link for a user - usually the hostname of the app.
   loginHost: process.env.LOGIN_HOST_ADDRESS
 
