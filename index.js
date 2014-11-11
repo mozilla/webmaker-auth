@@ -27,6 +27,7 @@ module.exports = function (options) {
   self.loginURL = options.loginURL;
   self.authLoginURL = options.authLoginURL;
   self.loginHost = options.loginHost;
+  self.allowCors = options.allowCors;
 
   self.refreshTime = options.refreshTime || 1000 * 60 * 15; // 15 minutes
 
@@ -197,9 +198,16 @@ module.exports = function (options) {
           res.json(json);
         });
       });
+
+      var appURL;
+      if (self.allowCors && self.allowCors[0] === '*' || self.allowCors.indexOf(req.headers.origin) > -1) {
+        appURL = req.headers.origin || self.loginHost;
+      } else {
+        appURL = self.loginHost;
+      }
       hReq.end(JSON.stringify({
         uid: req.body.uid,
-        appURL: self.loginHost + req.body.path
+        appURL: appURL + req.body.path
       }), 'utf8');
     },
     authenticateToken: function (req, res, next) {
