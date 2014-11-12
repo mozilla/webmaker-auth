@@ -52,6 +52,7 @@ var webmakerAuth = new WebmakerAuth({
   //     undefined
   allowCors: ["*"],
 
+  // This is to support super cookie domains
   domain: 'webmaker.org', // default undefined
 
   forceSSL: true, // default false
