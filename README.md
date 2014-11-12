@@ -31,10 +31,11 @@ var WebmakerAuth = require('webmaker-auth');
 var webmakerAuth = new WebmakerAuth({
 
   // required --------------------
-  // The location of the server on which this is being installed
-  loginURL: 'http://myserver.webmaker.org',
+  // The location of the login server
+  loginURL: 'http://localhost:3000',
 
-  // The address to use when requesting a login link for a user - probably the same as loginURL
+  // The address to use when requesting a login link for a user - probably the host of the app
+  // on which this is installed
   loginHost: 'http://myserver.webmaker.org'
 
   // This should match the secret key on login
