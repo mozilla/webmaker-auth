@@ -57,11 +57,20 @@ app.use(webmakerAuth.cookieParser());
 app.use(webmakerAuth.cookieSession());
 
 // Routes for front end
-app.post('/verify', webmakerAuth.handlers.verify);
-app.post('/authenticate', webmakerAuth.handlers.authenticate);
-app.post('/create', webmakerAuth.handlers.create);
-app.post('/logout', webmakerAuth.handlers.logout);
-app.post('/check-username', webmakerAuth.handlers.exists);
+app.post('/auth/v2/verify', webmakerAuth.handlers.verify);
+app.post('/auth/v2/authenticate', webmakerAuth.handlers.authenticate);
+app.post('/auth/v2/logout', webmakerAuth.handlers.logout);
+app.post('/auth/v2/create', webmakerAuth.handlers.createUser);
+app.post('/auth/v2/uid-exists', webmakerAuth.handlers.uidExists);
+app.post('/auth/v2/request', webmakerAuth.handlers.request);
+app.post('/auth/v2/authenticateToken', webmakerAuth.handlers.authenticateToken);
+app.post('/auth/v2/verify-password', webmakerAuth.handlers.verifyPassword);
+app.post('/auth/v2/request-reset-code', webmakerAuth.handlers.requestResetCode);
+app.post('/auth/v2/reset-password', webmakerAuth.handlers.resetPassword);
+
+// These webmaker-auth route handlers require a csrf token and a valid user session.
+app.post('/auth/v2/remove-password', webmakerAuth.handlers.removePassword);
+app.post('/auth/v2/enable-passwords', webmakerAuth.handlers.enablePasswords);
 ```
 
 ### TODO:
