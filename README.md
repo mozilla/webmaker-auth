@@ -48,9 +48,9 @@ var webmakerAuth = new WebmakerAuth({
   // if a cookie is older than the given time (in milliseconds), refresh the userdata
   refreshTime: 1000 * 60 * 5 // default 15 minutes,
 
-  // if set to 'true', webmaker-auth will bypass true login and simply treat any attempt
+  // optional - if set to 'true', webmaker-auth will bypass true login and simply treat any attempt
   // to log in as successful, yielding a session for user "testuser" with email "test@example.org"
-  testmode: false
+  testMode: false
 });
 
 // Middleware

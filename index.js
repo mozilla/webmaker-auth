@@ -146,7 +146,7 @@ module.exports = function (options) {
     return req.connection.remoteAddress;
   }
 
-  self.handlers = options.testmode ? require('./testmode')(options) : {
+  self.handlers = options.testMode ? require('./testmode')(options) : {
     request: function (req, res, next) {
       if (!req.body.uid) {
         return res.json(400, {
