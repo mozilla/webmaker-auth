@@ -146,7 +146,7 @@ module.exports = function (options) {
     return req.connection.remoteAddress;
   }
 
-  self.handlers = {
+  self.handlers = options.testMode ? require('./testmode')(options) : {
     request: function (req, res, next) {
       if (!req.body.uid) {
         return res.json(400, {
@@ -362,7 +362,7 @@ module.exports = function (options) {
     },
     verify: function (req, res, next) {
       if (!req.session.email && !req.session.user) {
-        return res.send({
+        return res.json({
           status: 'No Session'
         });
       }
@@ -371,7 +371,7 @@ module.exports = function (options) {
         return refreshSession(req, res, next);
       }
 
-      res.send({
+      res.json({
         status: 'Valid Session',
         user: req.session.user,
         email: req.session.email

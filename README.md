@@ -46,7 +46,11 @@ var webmakerAuth = new WebmakerAuth({
   forceSSL: process.env.FORCE_SSL // default false
 
   // if a cookie is older than the given time (in milliseconds), refresh the userdata
-  refreshTime: 1000 * 60 * 5 // default 15 minutes
+  refreshTime: 1000 * 60 * 5 // default 15 minutes,
+
+  // optional - if set to 'true', webmaker-auth will bypass true login and simply treat any attempt
+  // to log in as successful, yielding a session for user "testuser" with email "test@example.org"
+  testMode: false
 });
 
 // Middleware
