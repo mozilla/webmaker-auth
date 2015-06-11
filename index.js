@@ -689,23 +689,6 @@ module.exports = function (options) {
       });
       hReq.on('error', next);
       hReq.on('response', function (resp) {
-        if (resp.statusCode !== 200) {
-          switch (res.statusCode) {
-          case 400:
-            return res.json(400, {
-              error: 'bad request'
-            });
-          case 401:
-            return res.json(401, {
-              error: 'unauthorized'
-            });
-          default:
-            return res.json(resp.statusCode, {
-              error: 'There was an error processing the request'
-            });
-          }
-        }
-
         var bodyParts = [];
         var bytes = 0;
         resp.on('data', function (c) {
@@ -722,6 +705,10 @@ module.exports = function (options) {
             return res.json(500, {
               error: 'There was an error parsing the response from the server'
             });
+          }
+
+          if (resp.statusCode !== 200) {
+            return res.json(resp.statusCode, json);
           }
 
           authenticateCallback(null, req, res, json);
