@@ -11,9 +11,9 @@
     "url": "git://github.com/mozilla/webmaker-auth.git"
   },
   "author": "Webmaker Product Team <webmaker-staff@mozillafoundation.org>",
-  "license": "MPLv2",
+  "license": "MPL-2.0",
   "dependencies": {
-    "express": "3.4.5",
+    "express": "4.x",
     "hyperquest": "~0.2.0"
   },
   "devDependencies": {
