@@ -1,7 +1,7 @@
 {
   "name": "webmaker-auth",
   "description": "Express middleware for proxying authentication requests to a webmaker login server",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "main": "index.js",
   "scripts": {
     "test": "grunt"
