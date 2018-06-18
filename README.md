@@ -29,21 +29,34 @@ var WebmakerAuth = require('webmaker-auth');
 
 // Init
 var webmakerAuth = new WebmakerAuth({
-  // required
-  loginURL: process.env.LOGIN_URL,
-  authLoginURL: process.env.LOGIN_URL_WITH_AUTH,
-  secretKey: process.env.SECRET_KEY,
 
-  // This should be an array of URLs, or undefined.
-  // If you pass in ["*"], all CORS domains will be allowed (don't do this on production)
+  // required --------------------
+  // The location of the login server
+  loginURL: 'http://localhost:3000',
+
+  // The address to use when requesting a login link for a user - probably the host of the app
+  // on which this is installed
+  loginHost: 'http://myserver.webmaker.org'
+
+  // This should match the secret key on login
+  secretKey: 'BOB LOVES SOCKS',
+
+  // optional --------------------
+
+  // Fully qualified login API access point, if you need it
+  authLoginURL: 'http://testuser:password@localhost:3000',
+
+  // If you want to allow CORS requests on this server, use this option
+  // This should be one of:
+  //     ["*"] (allows all CORS domains. NOT FOR PRODUCTION)
+  //     an array of URLs (e.g. ["http://whatever.org", "http://blah.org"])
+  //     undefined
   allowCors: ["*"],
 
-  // The address to use when requesting a login link for a user - usually the hostname of the app.
-  loginHost: process.env.LOGIN_HOST_ADDRESS
+  // This is to support super cookie domains
+  domain: 'webmaker.org', // default undefined
 
-  // optional
-  domain: process.env.COOKIE_DOMAIN, // default undefined
-  forceSSL: process.env.FORCE_SSL // default false
+  forceSSL: true, // default false
 
   // if a cookie is older than the given time (in milliseconds), refresh the userdata
   refreshTime: 1000 * 60 * 5 // default 15 minutes,
@@ -80,6 +93,13 @@ app.post('/auth/v2/reset-password', webmakerAuth.handlers.resetPassword);
 app.post('/auth/v2/remove-password', webmakerAuth.handlers.removePassword);
 app.post('/auth/v2/enable-passwords', webmakerAuth.handlers.enablePasswords);
 ```
+
+## Migrating from 0.x.x
+
+Note that the following handlers no longer exist and should be removed:
+
+* webmakerAuth.handlers.create
+* webmakerAUth.handlers.exists
 
 ### TODO:
 
