@@ -1,4 +1,5 @@
-var express = require('express');
+var cookieSession = require('cookie-session');
+var cookieParser = require('cookie-parser');
 var hyperquest = require('hyperquest');
 
 module.exports = function (options) {
@@ -37,7 +38,7 @@ module.exports = function (options) {
   self.cookieName = 'webmakerlogin';
 
   self.cookieParser = function () {
-    return express.cookieParser();
+    return cookieParser();
   };
 
   self.cookieSession = function () {
@@ -55,7 +56,7 @@ module.exports = function (options) {
       options.cookie.domain = self.domain;
     }
 
-    var cookieSessionMiddleware = express.cookieSession(options);
+    var cookieSessionMiddleware = cookieSession(options);
 
     // This is a work-around for cross-origin OPTIONS requests
     // See https://github.com/senchalabs/connect/issues/323
